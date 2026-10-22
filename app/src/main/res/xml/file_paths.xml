@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+    Diz ao FileProvider qual pasta pode ser compartilhada.
+    "external-files-path" com path="." corresponde à pasta retornada por
+    getExternalFilesDir(null), onde gravamos a foto.
+-->
+<paths>
+    <external-files-path name="minhafoto" path="." />
+</paths>

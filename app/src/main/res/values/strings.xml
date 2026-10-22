@@ -1,0 +1,18 @@
+<resources>
+    <string name="app_name">Foto Nuvem</string>
+
+    <string name="titulo_tela">Hora da Foto</string>
+    <string name="btn_tirar_foto">Tirar foto</string>
+    <string name="btn_enviar">Enviar para a nuvem</string>
+    <string name="btn_galeria">Galeria</string>
+    <string name="subtitulo_tela">Capture e envie para a nuvem</string>
+    <string name="placeholder_foto">Nenhuma imagem selecionada</string>
+    <string name="desc_foto">Foto capturada</string>
+    <string name="status_inicial">Nenhuma foto ainda.</string>
+    <string name="status_foto_ok">Foto capturada. Toque em enviar.</string>
+    <string name="status_foto_cancelada">Captura cancelada.</string>
+    <string name="status_enviando">Enviando…</string>
+    <string name="status_url">URL: %1$s</string>
+    <string name="status_erro">Erro: %1$s</string>
+    <string name="erro_sem_foto">Tire uma foto primeiro.</string>
+</resources>
