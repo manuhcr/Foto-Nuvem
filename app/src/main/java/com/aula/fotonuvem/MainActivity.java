@@ -18,6 +18,7 @@ import androidx.activity.result.ActivityResult;
 import androidx.activity.result.ActivityResultCallback;
 import androidx.activity.result.ActivityResultLauncher;
 import androidx.activity.result.contract.ActivityResultContracts;
+import androidx.annotation.NonNull;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.core.content.FileProvider;
 import androidx.core.graphics.Insets;
@@ -128,97 +129,130 @@ public class MainActivity extends AppCompatActivity {
         });
 
         btnEnviar.setOnClickListener( v -> {
-            enviarNuvem();
+            salvarGaleria();
+
+            formatar_enviarNuvem();
+        });
+
+        txtStatus.setOnClickListener(v -> {
+            Intent rota = new Intent(this, VerImagem.class);
+            rota.putExtra("url", urlNuvem);
+            startActivity(rota);
         });
     }
 
+    private void salvarGaleria(){
+        //Configurar foto para galeria
+        ContentValues values = new ContentValues();
+        values.put(MediaStore.Images.Media.DISPLAY_NAME, "TurmaB" + System.currentTimeMillis() / 1000 + ".jpg");
+        values.put(MediaStore.Images.Media.MIME_TYPE, "image/jpeg");
+        values.put(MediaStore.Images.Media.RELATIVE_PATH, "Pictures/TurmaB");
+
+        Uri imagemSalvar = getContentResolver()
+                .insert(MediaStore.Images.Media.EXTERNAL_CONTENT_URI, values);
+
+        try {
+            InputStream inputStream = getContentResolver().openInputStream(fotoUri);
+            OutputStream outputStream = getContentResolver().openOutputStream(imagemSalvar);
+
+            byte[] buffer = new byte[1024];
+            int bytesLidos;
+            while ((bytesLidos = inputStream.read(buffer)) > 0) {
+                outputStream.write(buffer, 0, bytesLidos);
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+            }
 
 
-
-    private void enviarNuvem() {
-        if (fotoUri != null) {
-            progress.setVisibility(View.VISIBLE);
-            btnEnviar.setEnabled(false);
-            txtStatus.setText("Enviando...");
-
-            //realmente enviar para o cloudnary
-            MediaManager.get()
-                    .upload(fotoUri)
-                    .option("folder", "turmaB")
-                    .unsigned("fotonuvem")
-                    .callback(new UploadCallback() {
-                                @Override
-                                public void onStart(String requestId) {
-                                   //opcional
-                                }
-                                @Override
-                                public void onProgress(String requestId, long bytes, long totalBytes) {
-                                    //opcional
-                                }
-
-                                @Override
-                                public void onSuccess(String requestId, Map resultData) {
-                                    // recebe a URL da imagem hospedada
-                                    urlNuvem = (String) resultData.get("secure_url");
-                                    progress.setVisibility(View.GONE);
-                                    btnEnviar.setEnabled(true);
-                                    txtStatus.setText(urlNuvem);
-                                }
-
-                                @Override
-                                public void onError(String requestId, ErrorInfo error) {
-                                    Log.e("Cloudinary", error.getDescription());
-
-                                }
-
-                                @Override
-                                public void onReschedule(String requestId, ErrorInfo error) {
-
-                                }
-                              }
-                    ).dispatch();
-
-        }
     }
 
-    private void initCloudinary(){
+    private void formatar_enviarNuvem() {
+        if (fotoUri == null) return;
+
+        progress.setVisibility(View.VISIBLE);
+        btnEnviar.setEnabled(false);
+        txtStatus.setText("Enviando...");
+
+        // Realmente enviar para o cloudinary
+        MediaManager.get()
+                .upload(fotoUri)
+                .option("folder","turmaB")
+                .unsigned("fotonuvem")
+                .preprocess(new ImagePreprocessChain()
+                        .loadWith(new BitmapDecoder(1000, 1000))
+                        .addStep(new Limit(1000, 1000))
+                        .addStep(new DimensionsValidator(10,10,1000,1000))
+                        .addStep(new AutoRotation(getApplicationContext(), fotoUri))
+                        .saveWith(new BitmapEncoder(BitmapEncoder.Format.WEBP, 80)))
+                .callback(new UploadCallback() {
+                    @Override
+                    public void onStart(String requestId) {
+
+                    }
+
+                    @Override
+                    public void onProgress(String requestId, long bytes, long totalBytes) {
+                        // opcional
+                    }
+
+                    @Override
+                    public void onSuccess(String requestId, Map resultData) {
+                        // recebe a URL da imagem hospedada
+                        urlNuvem = (String) resultData.get("secure_url");
+                        progress.setVisibility(View.GONE);
+                        btnEnviar.setEnabled(true);
+                        txtStatus.setText(urlNuvem);
+                    }
+
+                    @Override
+                    public void onError(String requestId, ErrorInfo error) {
+                        Log.e("Cloudinary", error.getDescription());
+                    }
+
+                    @Override
+                    public void onReschedule(String requestId, ErrorInfo error) {
+
+                    }
+                }).dispatch(this);
+    }
+    private void initCloudinary() {
         try {
             Map config = new HashMap();
-            config.put("cloud_name" , "wuygauzb");
+            config.put("cloud_name", "z8iyapuj");
             MediaManager.init(this, config);
         } catch (Exception e) {
             Log.i("Cloudinary", e.getMessage());
         }
     }
 
-    private void tirarFoto(){
-        //habilitar as configurações para SALVAR a foto no celular
-
-        File arquivo = new File(getExternalFilesDir(null), "minhafoto.jpg");
-
-        fotoUri = FileProvider.getUriForFile(
-                this, getPackageName() + ".fileprovider", arquivo);
-
-        // ver no log o caminho
-        System.out.println("fotoUri: " + fotoUri);
-
-        //abrir a câmera
-        cameraLauncher.launch(fotoUri);
-    }
-
-    private void abrirGaleria(){
+    private void abrirGaleria() {
         Intent galeria = new Intent(Intent.ACTION_PICK,
                 MediaStore.Images.Media.EXTERNAL_CONTENT_URI);
         galeriaLauncher.launch(galeria);
+    }
 
+    private void tirarFoto() {
+        // habilitar as configurações para SALVAR a foto no celular
+
+        File arquivo = new File(getExternalFilesDir(null), "minhafoto.jpg");
+
+        fotoUri = FileProvider.getUriForFile
+                (this, getPackageName() + ".fileprovider", arquivo);
+
+        // ver no log o caminho
+        System.out.println(fotoUri);
+
+        // abrir a câmera (android)
+        cameraLauncher.launch(fotoUri);
     }
 
     @Override
-    protected void onSaveInstanceState(Bundle outState) {
+    protected void onSaveInstanceState(@NonNull Bundle outState) {
         super.onSaveInstanceState(outState);
         if (fotoUri != null) {
             outState.putString("fotoUri", fotoUri.toString());
+            outState.putString("status", txtStatus.getText().toString());
         }
-        outState.putString("txtStatus", txtStatus.getText().toString());
     }
 }

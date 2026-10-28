@@ -24,5 +24,12 @@ public class VerImagem extends AppCompatActivity {
             return insets;
         });
 
+
+        Bundle ler = getIntent().getExtras();
+        String url = ler.getString("url");
+
+        ImageView img = findViewById(R.id.imgFoto);
+        Glide.with(this).load(url).into(img);
+
     }
 }
